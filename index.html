@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light" />
+    <meta name="theme-color" content="#1a4fa0" />
+
+    <!-- Primary SEO -->
+    <title>Tapo Energy Consumption Dashboard — Visualize your smart-plug kWh</title>
+    <meta
+      name="description"
+      content="Free, private, no-backend dashboard to visualize TP-Link Tapo smart-plug energy use. Drop your 'Consumo de energía' Excel exports and get per-device and total hourly kWh charts you can download as PNG. All data stays in your browser."
+    />
+    <meta
+      name="keywords"
+      content="Tapo, TP-Link, smart plug, energy consumption, kWh, electricity, dashboard, power monitor, energy chart, home energy"
+    />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="/" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Tapo Energy Consumption Dashboard" />
+    <meta
+      property="og:description"
+      content="Visualize your TP-Link Tapo smart-plug energy use with per-device and total hourly kWh charts. 100% client-side — your files never leave your browser."
+    />
+    <meta property="og:locale" content="en" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Tapo Energy Consumption Dashboard" />
+    <meta
+      name="twitter:description"
+      content="Per-device and total hourly kWh charts for TP-Link Tapo smart plugs. Private, no backend, downloadable PNG charts."
+    />
+
+    <!-- Icons / PWA -->
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='88'%3E%E2%9A%A1%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="manifest" href="./manifest.webmanifest" />
+
+    <!-- Structured data -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Tapo Energy Consumption Dashboard",
+        "applicationCategory": "UtilitiesApplication",
+        "operatingSystem": "Any (web browser)",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "description": "No-backend dashboard to visualize TP-Link Tapo smart-plug energy consumption from Excel exports, with per-device and total hourly kWh charts downloadable as PNG."
+      }
+    </script>
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="app-header__brand">
+        <span class="app-header__logo" aria-hidden="true">⚡</span>
+        <h1>Tapo · Energy Consumption</h1>
+      </div>
+      <button id="btn-add-item" type="button">+ Add item</button>
+    </header>
+
+    <div class="container">
+      <section class="panel" aria-labelledby="items-title">
+        <div class="panel__head">
+          <h2 id="items-title">Items · Tapo plugs</h2>
+          <span id="items-count" class="panel__badge"></span>
+        </div>
+        <div id="items" aria-label="Registered items"></div>
+        <p id="items-empty" class="items-empty">
+          No items yet. Click <strong>“+ Add item”</strong> and drop the
+          <em>“Consumo de energía(kWh)”</em> Excel file exported from Tapo.
+        </p>
+      </section>
+
+      <section class="panel" aria-labelledby="dash-title">
+        <div class="panel__head panel__head--dash">
+          <h2 id="dash-title">Consumption by day</h2>
+          <nav id="calendar" aria-label="Day selector"></nav>
+        </div>
+
+        <main id="charts">
+          <figure class="chart-card">
+            <figcaption class="chart-card__caption">
+              <span class="chart-card__titles">
+                <span class="chart-card__title">Consumption per peripheral</span>
+                <span class="chart-card__sub">kWh per hour · each item in its own color</span>
+                <span id="total-per-item" class="chart-card__total"></span>
+              </span>
+              <button type="button" id="dl-per-item" class="chart-card__download" aria-label="Download this chart as PNG">
+                ⬇ PNG
+              </button>
+            </figcaption>
+            <div class="chart-wrapper">
+              <canvas id="chart-per-item" aria-label="Consumption per item by hour"></canvas>
+              <p class="chart-empty">
+                No data yet. Add an item and drop a “Consumo de energía(kWh)” file.
+              </p>
+            </div>
+          </figure>
+
+          <figure class="chart-card">
+            <figcaption class="chart-card__caption">
+              <span class="chart-card__titles">
+                <span class="chart-card__title">Total consumption · sum</span>
+                <span class="chart-card__sub">kWh per hour · sum of all items</span>
+                <span id="total-aggregate" class="chart-card__total"></span>
+              </span>
+              <button type="button" id="dl-aggregate" class="chart-card__download" aria-label="Download this chart as PNG">
+                ⬇ PNG
+              </button>
+            </figcaption>
+            <div class="chart-wrapper">
+              <canvas id="chart-aggregate" aria-label="Aggregate consumption by hour"></canvas>
+              <p class="chart-empty">No data to show the aggregate.</p>
+            </div>
+          </figure>
+        </main>
+      </section>
+    </div>
+
+    <footer class="app-footer">
+      <span class="app-footer__brand">⚡ Tapo · Energy Consumption</span>
+      <span class="app-footer__note">
+        100% client-side — your files never leave your browser.
+      </span>
+      <span class="app-footer__copy">
+        © 2026 Tapo · Energy Consumption. All rights reserved.
+      </span>
+    </footer>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

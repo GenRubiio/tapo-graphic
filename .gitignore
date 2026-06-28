@@ -1,0 +1,9 @@
+# Local Claude SDD runtime state
+.claude/state/
+
+# Node / build
+node_modules/
+dist/
+*.log
+
+test-data/*
