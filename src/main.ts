@@ -2,20 +2,37 @@ import './styles/main.css';
 import { Chart, registerables } from 'chart.js';
 import Annotation from 'chartjs-plugin-annotation';
 
-import type { AppState, TapoItem } from './types';
-import { loadState, saveRegistry, saveRecords, deleteItem } from './store';
+import type { AppState, TapoItem, TariffPrices } from './types';
+import {
+  loadState,
+  saveRegistry,
+  saveRecords,
+  deleteItem,
+  loadPrices,
+  savePrices,
+} from './store';
 import {
   unionDays,
   itemDaySeries,
   sumDaySeries,
   totalKWh,
 } from './data/aggregate';
+import { DEFAULT_PRICES, costForDaySeries } from './data/cost';
+import {
+  dailyTotals,
+  peakHour,
+  topConsumer,
+  averagePerDay,
+} from './data/stats';
+import { sampleItems } from './data/sampleData';
 import { colorForIndex } from './ui/colors';
 import { renderItemCard } from './ui/itemCard';
 import { renderCalendar } from './ui/calendar';
+import { renderStats, clearStats } from './ui/statsPanel';
 import { initChartPanel, type ChartPanel } from './ui/chartPanel';
 import { buildPerItemConfig } from './charts/perItemChart';
 import { buildAggregateConfig } from './charts/aggregateChart';
+import { buildDailyConfig } from './charts/dailyChart';
 import { showError, showInfo } from './ui/toasts';
 import { parseConsumo } from './parsing/parseConsumo';
 
@@ -44,9 +61,22 @@ function formatKWh(value: number): string {
   return `${value.toLocaleString('en-US', { maximumFractionDigits: 3 })} kWh`;
 }
 
-const state: AppState = { items: [], selectedDay: null };
+/** Format a € amount for the chart/stat readouts. */
+function formatMoney(value: number): string {
+  return `€${value.toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
+const state: AppState = {
+  items: [],
+  selectedDay: null,
+  prices: { ...DEFAULT_PRICES },
+};
 let perItemPanel: ChartPanel;
 let aggregatePanel: ChartPanel;
+let dailyPanel: ChartPanel;
 
 function newId(): string {
   return `item_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
@@ -84,30 +114,56 @@ function setTotals(label: string): void {
 }
 
 function setDownloadEnabled(enabled: boolean): void {
-  for (const id of ['dl-per-item', 'dl-aggregate']) {
+  for (const id of ['dl-per-item', 'dl-aggregate', 'dl-daily']) {
     const btn = document.getElementById(id) as HTMLButtonElement | null;
     if (btn) btn.disabled = !enabled;
   }
 }
 
 function updateCharts(): void {
+  const days = unionDays(state.items);
   const day = state.selectedDay;
+
+  // Daily-totals chart spans the whole range, independent of the selected day.
+  if (days.length === 0) {
+    dailyPanel.update(null);
+  } else {
+    dailyPanel.update(
+      buildDailyConfig(dailyTotals(state.items, days), day, handleDaySelect),
+    );
+  }
+
   if (!day || state.items.length === 0) {
     perItemPanel.update(null);
     aggregatePanel.update(null);
     setTotals('');
-    setDownloadEnabled(false);
+    clearStats();
+    setDownloadEnabled(days.length > 0);
     return;
   }
+
   const series = state.items.map((item) => ({
     name: item.name,
     color: item.color,
     data: itemDaySeries(item, day),
   }));
   const sum = sumDaySeries(state.items, day);
+  const cost = costForDaySeries(sum, state.prices);
+
   perItemPanel.update(buildPerItemConfig(series));
   aggregatePanel.update(buildAggregateConfig(sum));
-  setTotals(`Total consumed: ${formatKWh(totalKWh(sum))}`);
+  setTotals(
+    `Total consumed: ${formatKWh(totalKWh(sum))} · ${formatMoney(cost.total)}`,
+  );
+
+  renderStats({
+    dayTotalKWh: totalKWh(sum),
+    dayCost: cost.total,
+    peakHour: peakHour(sum),
+    topConsumer: topConsumer(state.items, day),
+    avgPerDay: averagePerDay(dailyTotals(state.items, days)),
+    cost,
+  });
   setDownloadEnabled(true);
 }
 
@@ -204,6 +260,60 @@ function handleConsumoDrop(id: string, file: File): void {
   reader.readAsArrayBuffer(file);
 }
 
+function handleLoadSample(): void {
+  if (state.items.length > 0) return;
+  const base = state.items.length;
+  sampleItems().forEach((sample, i) => {
+    const item: TapoItem = {
+      id: newId(),
+      name: sample.name,
+      color: colorForIndex(base + i),
+      consumo: sample.consumo,
+    };
+    state.items.push(item);
+    saveRecords(item.id, sample.consumo);
+  });
+  const result = saveRegistry(state.items);
+  if (!result.ok) showError(result.message);
+  renderAllItems();
+  recompute();
+  showInfo('Sample data loaded.');
+}
+
+function readPrices(): TariffPrices {
+  const read = (id: string): number => {
+    const el = document.getElementById(id) as HTMLInputElement | null;
+    const value = el ? Number.parseFloat(el.value) : Number.NaN;
+    return Number.isFinite(value) && value >= 0 ? value : 0;
+  };
+  return {
+    valley: read('price-valley'),
+    flat: read('price-flat'),
+    peak: read('price-peak'),
+  };
+}
+
+function handlePriceChange(): void {
+  state.prices = readPrices();
+  const result = savePrices(state.prices);
+  if (!result.ok) showError(result.message);
+  updateCharts();
+}
+
+function initPriceInputs(): void {
+  const fields: Array<[string, number]> = [
+    ['price-valley', state.prices.valley],
+    ['price-flat', state.prices.flat],
+    ['price-peak', state.prices.peak],
+  ];
+  for (const [id, value] of fields) {
+    const el = document.getElementById(id) as HTMLInputElement | null;
+    if (!el) continue;
+    el.value = String(value);
+    el.addEventListener('input', handlePriceChange);
+  }
+}
+
 function downloadChartImage(panel: ChartPanel, baseName: string): void {
   const url = panel.toImage();
   if (!url) {
@@ -223,11 +333,17 @@ function downloadChartImage(panel: ChartPanel, baseName: string): void {
 
 function init(): void {
   state.items = loadState();
+  state.prices = loadPrices();
   perItemPanel = initChartPanel('chart-per-item');
   aggregatePanel = initChartPanel('chart-aggregate');
+  dailyPanel = initChartPanel('chart-daily');
 
-  const addBtn = document.getElementById('btn-add-item');
-  addBtn?.addEventListener('click', handleAddItem);
+  document
+    .getElementById('btn-add-item')
+    ?.addEventListener('click', handleAddItem);
+  document
+    .getElementById('btn-load-sample')
+    ?.addEventListener('click', handleLoadSample);
 
   document
     .getElementById('dl-per-item')
@@ -239,7 +355,11 @@ function init(): void {
     ?.addEventListener('click', () =>
       downloadChartImage(aggregatePanel, 'aggregate'),
     );
+  document
+    .getElementById('dl-daily')
+    ?.addEventListener('click', () => downloadChartImage(dailyPanel, 'daily'));
 
+  initPriceInputs();
   renderAllItems();
   recompute();
 }

@@ -1,6 +1,7 @@
 import type { ChartConfiguration } from 'chart.js';
 import type { DaySeries } from '../types';
 import { tariffBoxes } from '../data/tariff';
+import { translucent } from '../ui/colors';
 import { HOUR_LABELS } from './perItemChart';
 
 /** Dark blue matching image.png. */
@@ -17,7 +18,7 @@ export function buildAggregateConfig(sum: DaySeries): ChartConfiguration {
           label: 'Total consumption',
           data: sum,
           borderColor: AGGREGATE_COLOR,
-          backgroundColor: `${AGGREGATE_COLOR}33`,
+          backgroundColor: translucent(AGGREGATE_COLOR, 0.2),
           tension: 0.4,
           pointRadius: 3,
           pointStyle: 'circle',

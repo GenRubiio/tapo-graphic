@@ -1,6 +1,7 @@
 import type { ChartConfiguration } from 'chart.js';
 import type { DaySeries } from '../types';
 import { tariffBoxes } from '../data/tariff';
+import { translucent } from '../ui/colors';
 
 const pad = (n: number): string => String(n).padStart(2, '0');
 
@@ -28,7 +29,7 @@ export function buildPerItemConfig(
         label: s.name,
         data: s.data,
         borderColor: s.color,
-        backgroundColor: `${s.color}33`,
+        backgroundColor: translucent(s.color),
         tension: 0.4,
         pointRadius: 3,
         pointStyle: 'circle',

@@ -1,5 +1,8 @@
 /** Shared domain types for the Tapo consumption dashboard (pure, no side effects). */
 
+import type { TariffPrices } from './data/cost';
+export type { TariffPrices } from './data/cost';
+
 /** One hour-bucket of consumption for a single item. */
 export interface HourlyRecord {
   /** Original timestamp re-hydrated as a Date (display/sort only). */
@@ -26,6 +29,8 @@ export interface AppState {
   items: TapoItem[];
   /** Currently selected calendar day ("YYYY/MM/DD") or null when no days. */
   selectedDay: string | null;
+  /** Tariff prices (€/kWh) used for cost estimation. */
+  prices: TariffPrices;
 }
 
 /** 24-slot kWh series, index === hour (0-23). */

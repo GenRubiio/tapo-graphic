@@ -75,6 +75,10 @@
         <p id="items-empty" class="items-empty">
           No items yet. Click <strong>“+ Add item”</strong> and drop the
           <em>“Consumo de energía(kWh)”</em> Excel file exported from Tapo.
+          <br />
+          <button id="btn-load-sample" type="button" class="btn-secondary">
+            Or load sample data
+          </button>
         </p>
       </section>
 
@@ -84,6 +88,7 @@
           <nav id="calendar" aria-label="Day selector"></nav>
         </div>
 
+        <!-- Primary charts: per-hour consumption -->
         <main id="charts">
           <figure class="chart-card">
             <figcaption class="chart-card__caption">
@@ -121,6 +126,43 @@
             </div>
           </figure>
         </main>
+
+        <!-- Secondary: cost estimation, summary stats and daily totals -->
+        <div class="dash-secondary">
+          <div class="dash-controls" aria-label="Tariff prices">
+            <span class="dash-controls__label">Tariff price (€/kWh):</span>
+            <label class="price-field">
+              <span class="dot dot--valley"></span> Valley
+              <input id="price-valley" type="number" min="0" step="0.01" inputmode="decimal" />
+            </label>
+            <label class="price-field">
+              <span class="dot dot--flat"></span> Flat
+              <input id="price-flat" type="number" min="0" step="0.01" inputmode="decimal" />
+            </label>
+            <label class="price-field">
+              <span class="dot dot--peak"></span> Peak
+              <input id="price-peak" type="number" min="0" step="0.01" inputmode="decimal" />
+            </label>
+          </div>
+
+          <div id="stats" class="stats"></div>
+
+          <figure class="chart-card">
+            <figcaption class="chart-card__caption">
+              <span class="chart-card__titles">
+                <span class="chart-card__title">Daily totals · range</span>
+                <span class="chart-card__sub">total kWh per day · click a bar to select that day</span>
+              </span>
+              <button type="button" id="dl-daily" class="chart-card__download" aria-label="Download this chart as PNG">
+                ⬇ PNG
+              </button>
+            </figcaption>
+            <div class="chart-wrapper">
+              <canvas id="chart-daily" aria-label="Total consumption per day"></canvas>
+              <p class="chart-empty">No data yet. Load data to see daily totals.</p>
+            </div>
+          </figure>
+        </div>
       </section>
     </div>
 

@@ -1,4 +1,5 @@
 import type { TapoItem, HourlyRecord } from './types';
+import { DEFAULT_PRICES, type TariffPrices } from './data/cost';
 
 export type SaveResult =
   | { ok: true }
@@ -11,6 +12,7 @@ export type SaveResult =
 export const KEYS = {
   registry: 'tapo_items',
   data: (id: string) => `tapo_data_${id}`,
+  prices: 'tapo_prices',
 } as const;
 
 const QUOTA_MESSAGE =
@@ -110,6 +112,30 @@ export function saveRecords(
     kWh: r.kWh,
   }));
   return writeKey(KEYS.data(itemId), JSON.stringify(stored));
+}
+
+/** Load tariff prices, falling back to the editable defaults. */
+export function loadPrices(): TariffPrices {
+  try {
+    const raw = localStorage.getItem(KEYS.prices);
+    if (!raw) return { ...DEFAULT_PRICES };
+    const parsed = JSON.parse(raw) as Partial<TariffPrices>;
+    // Reject non-finite OR negative values (matches the input path in main.ts).
+    const clean = (v: unknown, fallback: number): number =>
+      typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : fallback;
+    return {
+      valley: clean(parsed.valley, DEFAULT_PRICES.valley),
+      flat: clean(parsed.flat, DEFAULT_PRICES.flat),
+      peak: clean(parsed.peak, DEFAULT_PRICES.peak),
+    };
+  } catch {
+    return { ...DEFAULT_PRICES };
+  }
+}
+
+/** Persist tariff prices (quota-guarded). */
+export function savePrices(prices: TariffPrices): SaveResult {
+  return writeKey(KEYS.prices, JSON.stringify(prices));
 }
 
 /** Remove the item's data key and drop it from the registry. */
