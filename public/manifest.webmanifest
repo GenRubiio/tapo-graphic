@@ -1,6 +1,6 @@
 {
-  "name": "Tapo Energy Consumption Dashboard",
-  "short_name": "Tapo Energy",
+  "name": "Enerplot — Smart-plug energy dashboard",
+  "short_name": "Enerplot",
   "description": "Visualize TP-Link Tapo smart-plug energy consumption with per-device and total hourly kWh charts. 100% client-side.",
   "start_url": "./",
   "scope": "./",
